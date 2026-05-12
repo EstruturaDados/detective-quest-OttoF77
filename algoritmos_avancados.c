@@ -1,22 +1,85 @@
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 // Desafio Detective Quest
 // Tema 4 - Árvores e Tabela Hash
 // Este código inicial serve como base para o desenvolvimento das estruturas de navegação, pistas e suspeitos.
 // Use as instruções de cada região para desenvolver o sistema completo com árvore binária, árvore de busca e tabela hash.
 
+// 🌱 Nível Novato: Mapa da Mansão com Árvore Binária
+//
+// - Crie uma struct Sala com nome, e dois ponteiros: esquerda e direita.
+typedef struct Sala {
+    char nome[50];
+    struct Sala *esquerda;
+    struct Sala *direita;
+} Sala;
+
+// - Use funções como criarSala(), conectarSalas() e explorarSalas().
+// criarSala() – cria, de forma dinâmica, uma sala com nome
+Sala *criarSala(const char *nome, Sala *esquerda, Sala *direita) {
+    Sala *sala = (Sala *)malloc(sizeof(Sala));
+    strncpy(sala->nome, nome, sizeof(sala->nome) - 1);
+    sala->esquerda = esquerda;
+    sala->direita = direita;
+    return sala;
+}
+
+// explorarSalas() – permite a navegação do jogador pela árvore
+// - O jogador deve poder explorar indo à esquerda (e) ou à direita (d).
+// - Finalize a exploração com uma opção de saída (s).
+// - Exiba o nome da sala a cada movimento.
+// - Use recursão ou laços para caminhar pela árvore.
+void explorarSalas(Sala *atual) {
+    char opcao;
+
+    while (atual != NULL) {
+        printf("\nVoce esta em: %s\n", atual->nome);
+
+        if (atual->esquerda == NULL && atual->direita == NULL) {
+            printf("Sem saidas. Fim da exploracao.\n");
+            return;
+        }
+
+        printf("Caminhos disponiveis:");
+        if (atual->esquerda) printf(" [e] Esquerda");
+        if (atual->direita)  printf(" [d] Direita");
+        printf(" [s] Sair\nEscolha: ");
+
+        scanf(" %c", &opcao);
+
+        if (opcao == 's') {
+            printf("Exploracao encerrada.\n");
+            return;
+        } else if (opcao == 'e' && atual->esquerda) {
+            atual = atual->esquerda;
+        } else if (opcao == 'd' && atual->direita) {
+            atual = atual->direita;
+        } else {
+            printf("Opcao invalida ou caminho inexistente. Tente novamente.\n");
+        }
+    }
+}
+
 int main() {
 
     // 🌱 Nível Novato: Mapa da Mansão com Árvore Binária
     //
-    // - Crie uma struct Sala com nome, e dois ponteiros: esquerda e direita.
-    // - Use funções como criarSala(), conectarSalas() e explorarSalas().
     // - A árvore pode ser fixa: Hall de Entrada, Biblioteca, Cozinha, Sótão etc.
-    // - O jogador deve poder explorar indo à esquerda (e) ou à direita (d).
-    // - Finalize a exploração com uma opção de saída (s).
-    // - Exiba o nome da sala a cada movimento.
-    // - Use recursão ou laços para caminhar pela árvore.
     // - Nenhuma inserção dinâmica é necessária neste nível.
+    // main() – monta o mapa inicial e dá início à exploração
+    Sala *mapa =
+        criarSala("Hall de Entrada",
+            criarSala("Sala de Estar",
+                criarSala("Biblioteca", NULL, NULL),
+                criarSala("Sotao",      NULL, NULL)),
+            criarSala("Cozinha",
+                criarSala("Despensa",   NULL, NULL),
+                criarSala("Jardim",     NULL, NULL)));
+
+    printf("=== Detective Quest ===\n");
+    explorarSalas(mapa);
 
     // 🔍 Nível Aventureiro: Armazenamento de Pistas com Árvore de Busca
     //
@@ -37,11 +100,10 @@ int main() {
     // - Implemente uma função inserirHash(pista, suspeito) para registrar relações.
     // - Crie uma função para mostrar todos os suspeitos e suas respectivas pistas.
     // - Adicione um contador para saber qual suspeito foi mais citado.
-    // - Exiba ao final o “suspeito mais provável” baseado nas pistas coletadas.
+    // - Exiba ao final o "suspeito mais provável" baseado nas pistas coletadas.
     // - Para hashing simples, pode usar soma dos valores ASCII do nome ou primeira letra.
     // - Em caso de colisão, use lista encadeada para tratar.
     // - Modularize com funções como inicializarHash(), buscarSuspeito(), listarAssociacoes().
 
     return 0;
 }
-
