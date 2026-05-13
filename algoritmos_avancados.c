@@ -143,6 +143,129 @@ PistaNode *explorarSalasComPistas(Sala *atual, PistaNode *pistas) {
     return pistas;
 }
 
+// 🧠 Nível Mestre: Relacionamento de Pistas com Suspeitos via Hash
+//
+// - Crie uma struct Suspeito contendo nome e lista de pistas associadas.
+// - Crie uma tabela hash (ex: array de ponteiros para listas encadeadas).
+// - A chave pode ser o nome do suspeito ou derivada das pistas.
+#define HASH_SIZE 10
+
+typedef struct EntradaHash {
+    char pista[100];
+    char suspeito[50];
+    struct EntradaHash *proximo;
+} EntradaHash;
+
+EntradaHash *tabelaHash[HASH_SIZE];
+
+// - Para hashing simples, pode usar soma dos valores ASCII do nome ou primeira letra.
+// - Em caso de colisão, use lista encadeada para tratar.
+// - Modularize com funções como inicializarHash(), buscarSuspeito(), listarAssociacoes().
+// inicializarHash() – zera todos os slots da tabela
+void inicializarHash() {
+    for (int i = 0; i < HASH_SIZE; i++)
+        tabelaHash[i] = NULL;
+}
+
+// Calcula o índice hash pela soma dos valores ASCII da pista
+int calcularHash(const char *chave) {
+    int soma = 0;
+    for (int i = 0; chave[i] != '\0'; i++)
+        soma += (unsigned char)chave[i];
+    return soma % HASH_SIZE;
+}
+
+// - Implemente uma função inserirHash(pista, suspeito) para registrar relações.
+// inserirNaHash() – insere associação pista/suspeito na tabela hash
+void inserirNaHash(const char *pista, const char *suspeito) {
+    int idx = calcularHash(pista);
+    EntradaHash *nova = (EntradaHash *)malloc(sizeof(EntradaHash));
+    strncpy(nova->pista,    pista,    sizeof(nova->pista)    - 1);
+    strncpy(nova->suspeito, suspeito, sizeof(nova->suspeito) - 1);
+    nova->proximo   = tabelaHash[idx];
+    tabelaHash[idx] = nova;
+}
+
+// encontrarSuspeito() – consulta o suspeito correspondente a uma pista
+const char *encontrarSuspeito(const char *pista) {
+    int idx = calcularHash(pista);
+    EntradaHash *atual = tabelaHash[idx];
+    while (atual != NULL) {
+        if (strcmp(atual->pista, pista) == 0)
+            return atual->suspeito;
+        atual = atual->proximo;
+    }
+    return NULL;
+}
+
+// Percorre a BST em-ordem contando ocorrências por suspeito (auxiliar de verificarSuspeitoFinal)
+void contarSuspeitos(PistaNode *no, char nomes[][50], int *contadores, int *total) {
+    if (no == NULL) return;
+    contarSuspeitos(no->esquerda, nomes, contadores, total);
+    const char *s = encontrarSuspeito(no->texto);
+    if (s != NULL) {
+        int encontrado = 0;
+        for (int i = 0; i < *total; i++) {
+            if (strcmp(nomes[i], s) == 0) {
+                contadores[i]++;
+                encontrado = 1;
+                break;
+            }
+        }
+        if (!encontrado) {
+            strncpy(nomes[*total], s, 49);
+            contadores[*total] = 1;
+            (*total)++;
+        }
+    }
+    contarSuspeitos(no->direita, nomes, contadores, total);
+}
+
+// - Adicione um contador para saber qual suspeito foi mais citado.
+// - Exiba ao final o "suspeito mais provável" baseado nas pistas coletadas.
+// verificarSuspeitoFinal() – conduz à fase de julgamento final
+void verificarSuspeitoFinal(PistaNode *pistas) {
+    char nomes[20][50];
+    int  contadores[20];
+    int  total = 0;
+
+    contarSuspeitos(pistas, nomes, contadores, &total);
+
+    // Exibe suspeito mais provável
+    printf("\n=== Suspeitos e pistas associadas ===\n");
+    int maiorIdx = -1;
+    for (int i = 0; i < total; i++) {
+        printf("  %s: %d pista(s)\n", nomes[i], contadores[i]);
+        if (maiorIdx == -1 || contadores[i] > contadores[maiorIdx])
+            maiorIdx = i;
+    }
+
+    if (maiorIdx == -1) {
+        printf("\nNenhuma pista associada a suspeitos.\n");
+        return;
+    }
+
+    printf("\nSuspeito mais provavel: %s\n", nomes[maiorIdx]);
+
+    // Solicita acusação do jogador e verifica se há pistas suficientes
+    char acusado[50];
+    printf("\nQuem voce acusa? ");
+    scanf(" %49[^\n]", acusado);
+
+    int pistasDoacusado = 0;
+    for (int i = 0; i < total; i++) {
+        if (strcmp(nomes[i], acusado) == 0) {
+            pistasDoacusado = contadores[i];
+            break;
+        }
+    }
+
+    if (pistasDoacusado >= 2)
+        printf("\nAcusacao sustentada! %s e o culpado com %d pista(s) apontando para ele.\n", acusado, pistasDoacusado);
+    else
+        printf("\nPistas insuficientes para acusar %s. A investigacao continua...\n", acusado);
+}
+
 int main() {
 
     // 🌱 Nível Novato: Mapa da Mansão com Árvore Binária
@@ -191,6 +314,15 @@ int main() {
     // - Para hashing simples, pode usar soma dos valores ASCII do nome ou primeira letra.
     // - Em caso de colisão, use lista encadeada para tratar.
     // - Modularize com funções como inicializarHash(), buscarSuspeito(), listarAssociacoes().
+    inicializarHash();
+    inserirNaHash("Pegadas no tapete",        "Coronel Mostarda");
+    inserirNaHash("Livro com pagina marcada",  "Coronel Mostarda");
+    inserirNaHash("Mala com roupas escondidas","Senhorita Escarlate");
+    inserirNaHash("Faca fora do lugar",        "Professor Ameixa");
+    inserirNaHash("Veneno entre os alimentos", "Professor Ameixa");
+    inserirNaHash("Buraco recentemente cavado","Senhorita Escarlate");
+
+    verificarSuspeitoFinal(pistas);
 
     return 0;
 }
